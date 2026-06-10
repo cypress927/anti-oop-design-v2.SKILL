@@ -3,7 +3,7 @@
   "name": "anti-oop-design",
   "displayName": "Anti-OOP Design",
   "version": "1.0.0",
-  "description": "Architecture by aggregation: split pure computation from side effects, project growing data into business facts, and name units after aggregation.",
+  "description": "Architecture by aggregation: split pure computation from side effects, derive business facts from source data, and name units after aggregation.",
   "author": {
     "name": "cypress927"
   },

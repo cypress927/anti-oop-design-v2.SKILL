@@ -4,8 +4,8 @@ description: >-
   Use when starting or refactoring business logic with an anti-OOP,
   function-first architecture: discover structure by aggregating related
   business variables and rules, split pure computation from side-effect
-  functions, project growing data into growth-independent business facts, and
-  name abstractions only after they emerge.
+  functions, derive business facts from source data, and name abstractions only
+  after they emerge.
 ---
 
 # Anti-OOP Design
@@ -19,7 +19,7 @@ A program has only two kinds of functions:
 - **Pure functions** compute: they transform explicit input data into output data. They do not read time, random values, files, databases, network state, global state, or mutable objects.
 - **Side-effect functions** store or touch the outside world: they read, write, persist, fetch, send, log, schedule, mutate, or otherwise depend on external state. They may return values, but they have effects.
 
-Orchestration is not a third kind. It is the calling pattern between these two kinds: use side-effect functions to project external data into the facts requested by pure functions, call those pure functions, then execute the resulting side effects.
+Orchestration is not a third kind. It is the calling pattern between these two kinds: use side-effect functions to prepare the business facts requested by pure functions, call those pure functions, then execute the resulting side effects.
 
 ## Design Principles
 
@@ -31,17 +31,17 @@ Orchestration is not a third kind. It is the calling pattern between these two k
 
    Business rules belong in pure functions. Services, controllers, repositories, classes, and transports exist only to supply inputs to those functions or execute their outputs.
 
-3. **Exact growth-independent facts only**
+3. **Ask for business facts, not source data**
 
-   Exact dependencies are not enough. A function can receive only the exact fields it uses and still be wrong if those fields arrive as a collection that grows with system data. Pure functions should receive exact, growth-independent facts. If a rule only needs to know whether a sibling node with the same `name` and `type` exists, pass `sameNameAndTypeExists: boolean`, not a `siblings` array containing only `name` and `type`.
+   When shaping a pure business function, look for the fact the rule needs. The core should receive that fact directly: whether something exists, how many, which state, what value, which single selected item, which timestamp, or another small decision input. If a rule needs to know whether a sibling node with the same `name` and `type` exists, shape the input around `sameNameAndTypeExists: boolean`.
 
 4. **Identify growth vectors early**
 
    During design, identify which data can grow over time: users, books, orders, loans, events, messages, logs, rows, pages, streams. Business computation should be independent of their size.
 
-5. **Project growing data before computation**
+5. **Derive facts before computation**
 
-   Do not pass a smaller version of growing data into business functions. Selecting only a few fields from a growing set still couples computation to growth. Side-effect functions should project growing data into growth-independent facts before computation: existence checks, counts, totals, selected single records, enum states, timestamps, flags, or fixed-shape summaries.
+   Source data belongs to storage, network, runtime, and adapters. Before calling pure computation, derive the business fact the rule asked for: an existence check, count, total, selected single record, enum state, timestamp, flag, string, number, or fixed-shape summary. A collection can contain the fact, but the business function should be shaped around the fact itself.
 
 6. **Name last**
 
@@ -61,7 +61,7 @@ Orchestration is not a third kind. It is the calling pattern between these two k
 
 10. **Point outer work toward the business core**
 
-   Let UI/app code coordinate runtime. Let runtime and adapters gather or compute the growth-independent facts requested by the business core from storage, network, time, random values, queues, logs, and other external systems. Pass those facts into pure business functions. Use the returned decisions to execute runtime effects. Keep the business core as plain functions with explicit fact inputs and decision outputs.
+   Let UI/app code coordinate runtime. Let runtime and adapters prepare the facts requested by the business core from storage, network, time, random values, queues, logs, and other external systems. Pass those facts into pure business functions. Use the returned decisions to execute runtime effects. Keep the business core as plain functions with explicit fact inputs and decision outputs.
 
 ## Workflow
 
@@ -128,16 +128,16 @@ The pure function must not call `new Date()`, `Date.now()`, `Math.random()`, a r
 
 ### 5. Narrow the Inputs
 
-After the pure function works, reduce its parameters to exactly what it uses and make sure each parameter is independent of data growth.
+After the pure function works, reduce its parameters to the facts the rule actually uses.
 
 Do not pass:
 
 - whole ORM records
 - mutable domain objects
 - large owner objects
-- child collections that grow with system data
+- child collections used only to discover one fact
 - database query results
-- smaller projections of growing collections, such as `siblings.map(({ name, type }) => ...)`
+- field-only projections of source data, such as `siblings.map(({ name, type }) => ...)`, when the rule is asking for one fact
 - values kept only because they "might be needed later"
 
 Prefer:
@@ -150,9 +150,9 @@ Prefer:
 - `availableCopies: number`
 - `now: Date`
 
-### 6. Project Growing Data in Side-Effect Functions
+### 6. Prepare Business Facts in Side-Effect Functions
 
-If the rule seems to need a list that grows, stop and ask what growth-independent fact the rule really needs. The business core defines the fact it needs; the repository implements the query that produces that fact. Orchestration only satisfies that data contract.
+If the rule seems to need source data, ask what fact the rule is trying to learn from that data. The business core defines the fact it needs; the repository implements the query that produces that fact. Orchestration only satisfies that data contract.
 
 Replace:
 
@@ -172,7 +172,7 @@ evaluateBorrow({
 })
 ```
 
-The repository or storage function should perform filtering, counting, existence checks, pagination, and aggregation. Computation receives the growth-independent fact requested by the business core.
+The repository or storage function should perform filtering, counting, existence checks, pagination, and aggregation. Computation receives the business fact requested by the core.
 
 Another example:
 
@@ -186,7 +186,7 @@ decideCreateNode({
 })
 ```
 
-This is still growth coupling because the input grows with the number of sibling nodes.
+The rule is looking for one fact: whether a conflicting sibling already exists.
 
 Good:
 
@@ -198,7 +198,7 @@ decideCreateNode({
 })
 ```
 
-The side-effect function projects storage into the fact requested by the business core:
+The side-effect function prepares that fact from storage:
 
 ```ts
 existsSiblingNodeByNameAndType({
@@ -230,7 +230,7 @@ These functions are shaped by what the pure function needs. The pure function is
 
 ### 8. Keep Orchestration Thin
 
-Orchestration should load the growth-independent facts requested by the business core, call pure computation, and execute the resulting effects. It should not contain business conditions.
+Orchestration should load the business facts requested by the core, call pure computation, and execute the resulting effects. It should not contain business conditions.
 
 Good shape:
 
@@ -260,7 +260,7 @@ Examples:
 - a pure function that decides whether borrowing is allowed may become `BorrowDecision`
 - a pure function that calculates renewal eligibility may become `RenewPolicy`
 - a pure function that merges incoming cluster records may become `MembershipMerge`
-- repeated side-effect functions that produce business facts may become `BorrowFactRepository`
+- repeated side-effect functions that prepare business facts may become `BorrowFactRepository`
 - repeated fact input shapes may become shared types, but only after repetition
 
 Do not move from `User` or `Book` toward a business object just because those nouns exist in storage. Storage records such as `User`, `Book`, or `Loan` may be only persistence containers. The true business unit can be counterintuitive and should be named only after aggregation exposes it.
@@ -272,7 +272,7 @@ When existing code uses classes with data and methods mixed together:
 1. Pick one method that contains a business rule.
 2. Copy its conditions into a standalone pure function.
 3. Replace `this.field` access with explicit parameters.
-4. Replace child arrays or nested growing structures with growth-independent facts computed by storage.
+4. Replace child arrays or nested source data with business facts prepared by storage.
 5. Move database writes, mutation, logging, time, and random values outside the pure function.
 6. Let the original method become thin orchestration or delete it if it no longer owns behavior.
 7. Run tests after each step.
@@ -287,7 +287,8 @@ Watch for these signs that the design is drifting back into premature OOP or lay
 - Pure functions accepting whole records when they use one or two fields.
 - Business rules inside services, controllers, repositories, or entity methods.
 - A pure function calling time, random, database, network, filesystem, logger, or global state.
-- Arrays, pages, cursors, streams, or growing nested structures in business computation.
+- Business functions shaped around source data instead of the fact the rule needs.
+- Field-only projections of source data where the rule is asking for an existence, count, state, value, or selected item.
 - Shared types created before actual repetition.
 - Repository functions returning class instances with behavior.
 - Architecture folders created before concrete rules exist.
@@ -314,7 +315,7 @@ The folder names are less important than the invariant: business computation sta
 A typical application composition may look like:
 
 ```txt
-UI/app -> runtime/adapters -> growth-independent facts -> pure computation -> decisions -> runtime effects
+UI/app -> runtime/adapters -> business facts -> pure computation -> decisions -> runtime effects
 ```
 
 Runtime can provide network, storage, clock, random, queue, logging, and scheduling support. It depends on the business core for business guidance. The business core remains independent and testable with plain values and no mocks.
@@ -325,10 +326,10 @@ Before finishing, verify:
 
 - Can every business rule be tested without a database, network, clock, random source, or framework?
 - Do business-rule tests use plain inputs and outputs instead of mocks?
-- Does every pure function receive exact, growth-independent facts?
-- Does any business input grow when users, files, orders, loans, messages, or sibling nodes grow?
+- Does every pure function receive the business facts the rule actually needs?
+- If source data appears in a business input, what fact is the rule trying to learn from it?
 - Can a repository answer the need as an existence check, count, enum state, selected single record, or fixed-shape summary?
-- Are growing datasets projected by side-effect functions before computation?
+- Are source data and external state prepared into business facts before computation?
 - Is orchestration free of business conditions?
 - Do UI, runtime, storage, network, and framework code gather the facts requested by pure business functions?
 - Are business functions still plain input-to-decision functions?

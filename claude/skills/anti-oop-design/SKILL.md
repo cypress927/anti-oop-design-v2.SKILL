@@ -59,9 +59,9 @@ Orchestration is not a third kind. It is the calling pattern between these two k
 
    The architecture should make the most important business logic easy to test without mocks. Pure business functions should be tested with plain input data and expected output data. Mocks belong only at side-effect boundaries such as storage, network, time, random values, queues, logs, or external APIs.
 
-10. **Keep dependencies one-way**
+10. **Keep dependencies pointing inward**
 
-   The dependency shape should be simple and directional: side-effect functions feed finite data into pure functions, pure functions return decisions, and side-effect functions execute the results. Prefer a tree or even a chain of one-way dependencies. Avoid graph-shaped dependencies where business objects, services, repositories, and side effects all call each other.
+   Do not require every call path to be a strict tree or chain. The important rule is that outer layers depend inward on the business core, not the other way around. UI can call runtime, runtime can provide network, storage, time, and scheduling support, and runtime can call pure business functions for guidance. The business core should not depend on UI, runtime, network, storage, framework, or app composition.
 
 ## Workflow
 
@@ -254,7 +254,8 @@ Watch for these signs that the design is drifting back into premature OOP or lay
 - Repository functions returning class instances with behavior.
 - Architecture folders created before concrete rules exist.
 - Business-rule tests that require mocks for database, network, clock, random values, or framework objects.
-- Dependencies forming a graph of mutual calls instead of a one-way tree or chain.
+- Business core depending on UI, runtime, network, storage, framework, or app composition.
+- Dependency cycles that pull business computation outward into side-effect code.
 
 ## Expected Shape
 
@@ -270,15 +271,15 @@ src/
   transport/          # HTTP, CLI, queue, RPC, UI adapters
 ```
 
-The folder names are less important than the invariant: business computation stays pure, growing data stays behind side-effect functions, names follow the structure that emerges, and dependencies flow in one direction.
+The folder names are less important than the invariant: business computation stays pure, growing data stays behind side-effect functions, names follow the structure that emerges, and outer layers point inward toward the business core.
 
-The desired dependency shape is closer to:
+A typical application composition may look like:
 
 ```txt
-side effects -> finite inputs -> pure computation -> decisions -> side effects
+UI/app -> runtime/adapters -> finite inputs -> pure computation -> decisions -> runtime effects
 ```
 
-This should make the business core testable with plain values and no mocks.
+Runtime can provide network, storage, clock, random, queue, logging, and scheduling support. It depends on the business core for business guidance. The business core remains independent and testable with plain values and no mocks.
 
 ## Final Check
 
@@ -289,6 +290,7 @@ Before finishing, verify:
 - Does every pure function receive only finite, explicit input values?
 - Are growing datasets handled by side-effect functions before computation?
 - Is orchestration free of business conditions?
-- Do dependencies flow one way, closer to a tree or chain than a graph?
+- Do outer layers such as UI, runtime, storage, network, and framework code depend inward on the business core?
+- Is the business core free from dependencies on UI, runtime, storage, network, framework, and app composition?
 - Did every shared type or abstraction appear because of actual repetition?
 - Did the names come after observing the clusters?

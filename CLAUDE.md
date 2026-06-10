@@ -61,9 +61,9 @@ The real business unit may be counterintuitive. It may be `BorrowDecision`, `Ren
 
    The most important business logic should be testable without mocks. Test pure business functions with plain input data and expected output data. Use mocks only at side-effect boundaries such as storage, network, time, random values, queues, logs, or external APIs.
 
-10. **Keep dependencies one-way**
+10. **Keep dependencies pointing inward**
 
-   The dependency shape should be simple and directional: side-effect functions feed finite data into pure functions, pure functions return decisions, and side-effect functions execute the results. Prefer a tree or even a chain of one-way dependencies. Avoid graph-shaped dependencies where business objects, services, repositories, and side effects all call each other.
+   Do not require every call path to be a strict tree or chain. The important rule is that outer layers depend inward on the business core, not the other way around. UI can call runtime, runtime can provide network, storage, time, and scheduling support, and runtime can call pure business functions for guidance. The business core should not depend on UI, runtime, network, storage, framework, or app composition.
 
 ## Workflow
 
@@ -163,7 +163,8 @@ Do not preserve a class just because its name sounds like the domain. If it only
 - Repository functions returning class instances with behavior.
 - Architecture folders created before concrete rules exist.
 - Business-rule tests that require mocks for database, network, clock, random values, or framework objects.
-- Dependencies forming a graph of mutual calls instead of a one-way tree or chain.
+- Business core depending on UI, runtime, network, storage, framework, or app composition.
+- Dependency cycles that pull business computation outward into side-effect code.
 
 ## Final Check
 
@@ -174,6 +175,7 @@ Before finishing, verify:
 - Does every pure function receive only finite, explicit input values?
 - Are growing datasets handled by side-effect functions before computation?
 - Is orchestration free of business conditions?
-- Do dependencies flow one way, closer to a tree or chain than a graph?
+- Do outer layers such as UI, runtime, storage, network, and framework code depend inward on the business core?
+- Is the business core free from dependencies on UI, runtime, storage, network, framework, and app composition?
 - Did every abstraction appear because of actual repetition?
 - Did names come after aggregation exposed the real unit?

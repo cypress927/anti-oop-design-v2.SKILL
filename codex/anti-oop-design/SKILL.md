@@ -35,31 +35,35 @@ Orchestration is not a third kind. It is the calling pattern between these two k
 
    When shaping a pure business function, look for the fact the rule needs. The core should receive that fact directly: whether something exists, how many, which state, what value, which single selected item, which timestamp, or another small decision input. If a rule needs to know whether a sibling node with the same `name` and `type` exists, shape the input around `sameNameAndTypeExists: boolean`.
 
-4. **Identify growth vectors early**
+4. **Shape outputs as business facts too**
+
+   When a pure business function emerges from aggregation, observe both sides of the rule: what facts the rule needs and what facts the rule settles. Inputs are business facts prepared for the rule. Outputs are business facts settled by the rule. Runtime continues from the facts returned by the business function.
+
+5. **Identify growth vectors early**
 
    During design, identify which data can grow over time: users, books, orders, loans, events, messages, logs, rows, pages, streams. Business computation should be independent of their size.
 
-5. **Derive facts before computation**
+6. **Derive facts before computation**
 
    Source data belongs to storage, network, runtime, and adapters. Before calling pure computation, derive the business fact the rule asked for: an existence check, count, total, selected single record, enum state, timestamp, flag, string, number, or fixed-shape summary. A collection can contain the fact, but the business function should be shaped around the fact itself.
 
-6. **Name last**
+7. **Name last**
 
    Do not begin by naming `User`, `Book`, `Order`, `Manager`, `Service`, or shared types. Write concrete rules first. After aggregation, name the unit that actually emerged. It may be a surprising business unit such as `BorrowDecision`, `RenewPolicy`, `EligibilityCheck`, or `MembershipMerge`, not the obvious storage nouns. A name should come from the completed aggregation, not from an architectural guess.
 
-7. **Extract abstraction only after repetition**
+8. **Extract abstraction only after repetition**
 
    Do not create shared types, base classes, interfaces, or folders because they seem likely to be useful. Extract them only when the same shape or rule actually repeats.
 
-8. **Verify one step at a time**
+9. **Verify one step at a time**
 
    Make one structural change, run the relevant test or program, then continue. If the structure looks wrong, step back and re-aggregate instead of forcing the planned design.
 
-9. **Make business tests mock-free**
+10. **Make business tests mock-free**
 
    The architecture should make the most important business logic easy to test without mocks. Pure business functions should be tested with plain input data and expected output data. Mocks belong only at side-effect boundaries such as storage, network, time, random values, queues, logs, or external APIs.
 
-10. **Point outer work toward the business core**
+11. **Point outer work toward the business core**
 
    Let UI/app code coordinate runtime. Let runtime and adapters prepare the facts requested by the business core from storage, network, time, random values, queues, logs, and other external systems. Pass those facts into pure business functions. Use the returned decisions to execute runtime effects. Keep the business core as plain functions with explicit fact inputs and decision outputs.
 
@@ -210,6 +214,8 @@ existsSiblingNodeByNameAndType({
 
 Passing `sameNameAndTypeExists` into the business function is not business leakage into orchestration. It is the data specification declared by the business core. The business function still owns the decision: today it may reject duplicates; later it may allow duplicates under other conditions.
 
+On the output side of the same rule, observe what facts the create-node rule settles. If the rule settles the recorded size or whether storage usage changes, those settled facts should travel out with the decision. Runtime continues from those returned facts instead of inspecting `input.type` after the decision to rediscover business meaning.
+
 ### 7. Build Side Effects Around the Pure Function
 
 Only after the pure function's input and output are clear, define the I/O required to support it.
@@ -327,6 +333,7 @@ Before finishing, verify:
 - Can every business rule be tested without a database, network, clock, random source, or framework?
 - Do business-rule tests use plain inputs and outputs instead of mocks?
 - Does every pure function receive the business facts the rule actually needs?
+- Do pure function outputs express the facts the rule settled?
 - If source data appears in a business input, what fact is the rule trying to learn from it?
 - Can a repository answer the need as an existence check, count, enum state, selected single record, or fixed-shape summary?
 - Are source data and external state prepared into business facts before computation?

@@ -37,31 +37,35 @@ The real business unit may be counterintuitive. It may be `BorrowDecision`, `Ren
 
    When shaping a pure business function, look for the fact the rule needs. The core should receive that fact directly: whether something exists, how many, which state, what value, which single selected item, which timestamp, or another small decision input. If a rule needs to know whether a sibling node with the same `name` and `type` exists, shape the input around `sameNameAndTypeExists: boolean`.
 
-4. **Identify growth vectors early**
+4. **Shape outputs as business facts too**
+
+   When a pure business function emerges from aggregation, observe both sides of the rule: what facts the rule needs and what facts the rule settles. Inputs are business facts prepared for the rule. Outputs are business facts settled by the rule. Runtime continues from the facts returned by the business function.
+
+5. **Identify growth vectors early**
 
    Identify data that grows over time: users, books, orders, loans, events, messages, logs, rows, pages, streams. Business computation should not depend on their size.
 
-5. **Derive facts before computation**
+6. **Derive facts before computation**
 
    Source data belongs to storage, network, runtime, and adapters. Before calling pure computation, derive the business fact the rule asked for: an existence check, count, total, selected single record, enum state, timestamp, flag, string, number, or fixed-shape summary. A collection can contain the fact, but the business function should be shaped around the fact itself.
 
-6. **Name last**
+7. **Name last**
 
    Name the aggregated unit after its role is visible. Do not force storage nouns to become business objects.
 
-7. **Abstract only after repetition**
+8. **Abstract only after repetition**
 
    Create shared types, interfaces, base classes, helpers, or folders only when the same shape or rule actually repeats.
 
-8. **Verify one step at a time**
+9. **Verify one step at a time**
 
    Make one structural change, run the relevant test or program, then continue. If the structure looks wrong, re-aggregate instead of forcing the planned design.
 
-9. **Make business tests mock-free**
+10. **Make business tests mock-free**
 
    The most important business logic should be testable without mocks. Test pure business functions with plain input data and expected output data. Use mocks only at side-effect boundaries such as storage, network, time, random values, queues, logs, or external APIs.
 
-10. **Point outer work toward the business core**
+11. **Point outer work toward the business core**
 
    Let UI/app code coordinate runtime. Let runtime and adapters prepare the facts requested by the business core from storage, network, time, random values, queues, logs, and other external systems. Pass those facts into pure business functions. Use the returned decisions to execute runtime effects. Keep the business core as plain functions with explicit fact inputs and decision outputs.
 
@@ -150,6 +154,8 @@ The real business unit may be counterintuitive. It may be `BorrowDecision`, `Ren
 
    The repository may provide `existsSiblingNodeByNameAndType({ parentId, name, type })`. That is not business leakage into orchestration; it is the data specification requested by the business core. The business function still owns the decision.
 
+   On the output side of the same rule, observe what facts the create-node rule settles. If the rule settles the recorded size or whether storage usage changes, those settled facts should travel out with the decision. Runtime continues from those returned facts instead of inspecting `input.type` after the decision to rediscover business meaning.
+
 7. Build I/O around the pure function.
 
    Side-effect functions should be shaped by what the pure function needs, not by what the database schema happens to expose.
@@ -198,6 +204,7 @@ Before finishing, verify:
 - Can every business rule be tested without database, network, clock, random source, or framework?
 - Do business-rule tests use plain inputs and outputs instead of mocks?
 - Does every pure function receive the business facts the rule actually needs?
+- Do pure function outputs express the facts the rule settled?
 - If source data appears in a business input, what fact is the rule trying to learn from it?
 - Can a repository answer the need as an existence check, count, enum state, selected single record, or fixed-shape summary?
 - Are source data and external state prepared into business facts before computation?

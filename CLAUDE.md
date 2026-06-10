@@ -31,6 +31,8 @@ The real business unit may be counterintuitive. Its name should come from the re
 
 First bring the facts, checks, reads, writes, and state changes related to one business rule into the same view.
 
+Aggregation keeps related business change points visible together: when a rule changes, the facts it reads, the data it computes, and the external effects it drives can be reviewed and updated as one unit.
+
 This is discovery, not upfront design. Do not classify, name, or abstract before the related facts are visible together.
 
 ### 2. Pure Computation Is The Center

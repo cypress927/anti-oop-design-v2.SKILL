@@ -57,6 +57,14 @@ The real business unit may be counterintuitive. It may be `BorrowDecision`, `Ren
 
    Make one structural change, run the relevant test or program, then continue. If the structure looks wrong, re-aggregate instead of forcing the planned design.
 
+9. **Make business tests mock-free**
+
+   The most important business logic should be testable without mocks. Test pure business functions with plain input data and expected output data. Use mocks only at side-effect boundaries such as storage, network, time, random values, queues, logs, or external APIs.
+
+10. **Keep dependencies one-way**
+
+   The dependency shape should be simple and directional: side-effect functions feed finite data into pure functions, pure functions return decisions, and side-effect functions execute the results. Prefer a tree or even a chain of one-way dependencies. Avoid graph-shaped dependencies where business objects, services, repositories, and side effects all call each other.
+
 ## Workflow
 
 1. Choose one concrete business operation, not a noun.
@@ -154,14 +162,18 @@ Do not preserve a class just because its name sounds like the domain. If it only
 - Shared types created before actual repetition.
 - Repository functions returning class instances with behavior.
 - Architecture folders created before concrete rules exist.
+- Business-rule tests that require mocks for database, network, clock, random values, or framework objects.
+- Dependencies forming a graph of mutual calls instead of a one-way tree or chain.
 
 ## Final Check
 
 Before finishing, verify:
 
 - Can every business rule be tested without database, network, clock, random source, or framework?
+- Do business-rule tests use plain inputs and outputs instead of mocks?
 - Does every pure function receive only finite, explicit input values?
 - Are growing datasets handled by side-effect functions before computation?
 - Is orchestration free of business conditions?
+- Do dependencies flow one way, closer to a tree or chain than a graph?
 - Did every abstraction appear because of actual repetition?
 - Did names come after aggregation exposed the real unit?

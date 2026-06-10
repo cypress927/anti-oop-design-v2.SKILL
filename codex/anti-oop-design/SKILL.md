@@ -55,6 +55,14 @@ Orchestration is not a third kind. It is the calling pattern between these two k
 
    Make one structural change, run the relevant test or program, then continue. If the structure looks wrong, step back and re-aggregate instead of forcing the planned design.
 
+9. **Make business tests mock-free**
+
+   The architecture should make the most important business logic easy to test without mocks. Pure business functions should be tested with plain input data and expected output data. Mocks belong only at side-effect boundaries such as storage, network, time, random values, queues, logs, or external APIs.
+
+10. **Keep dependencies one-way**
+
+   The dependency shape should be simple and directional: side-effect functions feed finite data into pure functions, pure functions return decisions, and side-effect functions execute the results. Prefer a tree or even a chain of one-way dependencies. Avoid graph-shaped dependencies where business objects, services, repositories, and side effects all call each other.
+
 ## Workflow
 
 ### 1. Choose One Business Rule
@@ -245,6 +253,8 @@ Watch for these signs that the design is drifting back into premature OOP or lay
 - Shared types created before actual repetition.
 - Repository functions returning class instances with behavior.
 - Architecture folders created before concrete rules exist.
+- Business-rule tests that require mocks for database, network, clock, random values, or framework objects.
+- Dependencies forming a graph of mutual calls instead of a one-way tree or chain.
 
 ## Expected Shape
 
@@ -260,15 +270,25 @@ src/
   transport/          # HTTP, CLI, queue, RPC, UI adapters
 ```
 
-The folder names are less important than the invariant: business computation stays pure, growing data stays behind side-effect functions, and names follow the structure that emerges.
+The folder names are less important than the invariant: business computation stays pure, growing data stays behind side-effect functions, names follow the structure that emerges, and dependencies flow in one direction.
+
+The desired dependency shape is closer to:
+
+```txt
+side effects -> finite inputs -> pure computation -> decisions -> side effects
+```
+
+This should make the business core testable with plain values and no mocks.
 
 ## Final Check
 
 Before finishing, verify:
 
 - Can every business rule be tested without a database, network, clock, random source, or framework?
+- Do business-rule tests use plain inputs and outputs instead of mocks?
 - Does every pure function receive only finite, explicit input values?
 - Are growing datasets handled by side-effect functions before computation?
 - Is orchestration free of business conditions?
+- Do dependencies flow one way, closer to a tree or chain than a graph?
 - Did every shared type or abstraction appear because of actual repetition?
 - Did the names come after observing the clusters?

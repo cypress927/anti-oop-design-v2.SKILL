@@ -2,6 +2,8 @@
 
 This repository provides the Anti-OOP Design skill packaged for different agent platforms, including a Claude Code marketplace plugin package.
 
+Anti-OOP Design exposes architecture by aggregating business rules, separating pure computation from side effects, isolating growing data in storage, and keeping dependencies one-way. The intended result is a business core that is easy to test with plain inputs and outputs, without mocks.
+
 Because only one platform version is installed at a time, every platform package keeps the same skill name:
 
 ```yaml

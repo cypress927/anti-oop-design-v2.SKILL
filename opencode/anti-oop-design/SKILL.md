@@ -41,7 +41,7 @@ Orchestration is not a third kind. It is the calling pattern between these two k
 
 5. **Keep growing data out of computation**
 
-   Pure functions should not depend on unbounded arrays, database-sized lists, pagination, cursors, streams, query results, or object graphs that grow with the system. Side-effect functions reduce growing data into finite values before computation: counts, booleans, selected records, totals, limits, flags, timestamps, or fixed-shape summaries.
+   Pure functions should not depend on unbounded arrays, database-sized lists, pagination, cursors, streams, query results, or nested structures that grow with the system. Side-effect functions reduce growing data into finite values before computation: counts, booleans, selected records, totals, limits, flags, timestamps, or fixed-shape summaries.
 
 6. **Name last**
 
@@ -59,9 +59,9 @@ Orchestration is not a third kind. It is the calling pattern between these two k
 
    The architecture should make the most important business logic easy to test without mocks. Pure business functions should be tested with plain input data and expected output data. Mocks belong only at side-effect boundaries such as storage, network, time, random values, queues, logs, or external APIs.
 
-10. **Keep dependencies pointing inward**
+10. **Point outer work toward the business core**
 
-   Do not require every call path to be a strict tree or chain. The important rule is that outer layers depend inward on the business core, not the other way around. UI can call runtime, runtime can provide network, storage, time, and scheduling support, and runtime can call pure business functions for guidance. The business core should not depend on UI, runtime, network, storage, framework, or app composition.
+   Let UI/app code coordinate runtime. Let runtime and adapters gather finite input from storage, network, time, random values, queues, logs, and other external systems. Pass that finite input into pure business functions. Use the returned decisions to execute runtime effects. Keep the business core as plain functions with explicit finite inputs and decision outputs.
 
 ## Workflow
 
@@ -234,7 +234,7 @@ When existing code uses classes with data and methods mixed together:
 1. Pick one method that contains a business rule.
 2. Copy its conditions into a standalone pure function.
 3. Replace `this.field` access with explicit parameters.
-4. Replace child arrays or object graphs with finite values computed by storage.
+4. Replace child arrays or nested growing structures with finite values computed by storage.
 5. Move database writes, mutation, logging, time, and random values outside the pure function.
 6. Let the original method become thin orchestration or delete it if it no longer owns behavior.
 7. Run tests after each step.
@@ -249,13 +249,13 @@ Watch for these signs that the design is drifting back into premature OOP or lay
 - Pure functions accepting whole records when they use one or two fields.
 - Business rules inside services, controllers, repositories, or entity methods.
 - A pure function calling time, random, database, network, filesystem, logger, or global state.
-- Arrays, pages, cursors, streams, or growing object graphs in business computation.
+- Arrays, pages, cursors, streams, or growing nested structures in business computation.
 - Shared types created before actual repetition.
 - Repository functions returning class instances with behavior.
 - Architecture folders created before concrete rules exist.
 - Business-rule tests that require mocks for database, network, clock, random values, or framework objects.
-- Business core depending on UI, runtime, network, storage, framework, or app composition.
-- Dependency cycles that pull business computation outward into side-effect code.
+- Business rules requiring runtime objects before they can run.
+- Runtime, framework, storage, or network details appearing in pure function signatures.
 
 ## Expected Shape
 
@@ -290,7 +290,7 @@ Before finishing, verify:
 - Does every pure function receive only finite, explicit input values?
 - Are growing datasets handled by side-effect functions before computation?
 - Is orchestration free of business conditions?
-- Do outer layers such as UI, runtime, storage, network, and framework code depend inward on the business core?
-- Is the business core free from dependencies on UI, runtime, storage, network, framework, and app composition?
+- Do UI, runtime, storage, network, and framework code gather finite inputs and call pure business functions for decisions?
+- Are business functions still plain input-to-decision functions?
 - Did every shared type or abstraction appear because of actual repetition?
 - Did the names come after observing the clusters?

@@ -1,6 +1,6 @@
 # Anti-OOP Design Skill
 
-This repository provides the same Anti-OOP Design skill packaged for different agent platforms.
+This repository provides the Anti-OOP Design skill packaged for different agent platforms, including a Claude Code marketplace plugin package.
 
 Because only one platform version is installed at a time, every platform package keeps the same skill name:
 
@@ -11,13 +11,19 @@ name: anti-oop-design
 ## Layout
 
 ```txt
+.claude-plugin/
+  marketplace.json
+
 codex/
   anti-oop-design/
     SKILL.md
 
 claude/
-  anti-oop-design/
-    SKILL.md
+  .claude-plugin/
+    plugin.json
+  skills/
+    anti-oop-design/
+      SKILL.md
 
 opencode/
   anti-oop-design/
@@ -27,7 +33,7 @@ opencode/
 ## Which Folder Should I Use?
 
 - Use `codex/` for Codex or OpenAI Agent Skills.
-- Use `claude/` for Claude Code local skills.
+- Use `claude/` for the Claude Code plugin package.
 - Use `opencode/` for opencode local skills.
 
 The skill content is intentionally almost identical across platforms. The separate folders make installation explicit and leave room for platform-specific changes later.
@@ -48,21 +54,50 @@ Expected result:
 
 Restart Codex after copying.
 
-## Install for Claude Code
+## Install for Claude Code Through Marketplace
 
-Copy the Claude skill folder into your Claude Code skills directory:
-
-```powershell
-Copy-Item -Recurse .\claude\anti-oop-design $env:USERPROFILE\.claude\skills\
-```
-
-Expected result:
+Add this repository as a Claude Code marketplace:
 
 ```txt
-%USERPROFILE%\.claude\skills\anti-oop-design\SKILL.md
+/plugin marketplace add cypress927/anti-oop-design-v2.SKILL
 ```
 
-Restart Claude Code after copying.
+Install the plugin:
+
+```txt
+/plugin install anti-oop-design@anti-oop-design-skills
+```
+
+The bundled skill is namespaced by the plugin name:
+
+```txt
+/anti-oop-design:anti-oop-design
+```
+
+You can also use the non-interactive CLI form:
+
+```powershell
+claude plugin marketplace add cypress927/anti-oop-design-v2.SKILL
+claude plugin install anti-oop-design@anti-oop-design-skills
+```
+
+## Test the Claude Plugin Locally
+
+From the repository root:
+
+```powershell
+claude --plugin-dir .\claude
+```
+
+## Install for Claude Code as a Local Skill
+
+If you do not want marketplace/plugin installation, copy the skill itself:
+
+```powershell
+Copy-Item -Recurse .\claude\skills\anti-oop-design $env:USERPROFILE\.claude\skills\
+```
+
+This local-skill install is separate from the marketplace plugin flow.
 
 ## Install for opencode
 
@@ -83,16 +118,22 @@ Restart or reload opencode after copying.
 
 ## Format Notes
 
-This repository uses the shared local skill shape used by Codex, Claude Code, and opencode:
+Codex and opencode use the shared local skill shape:
 
 ```txt
 skill-name/
   SKILL.md
 ```
 
-Each `SKILL.md` contains YAML frontmatter with `name` and `description`, followed by Markdown instructions.
+Claude Code uses a plugin package:
 
-This is not a Claude Code marketplace plugin package. A Claude plugin package would add a `.claude-plugin/plugin.json` manifest around the skill.
+```txt
+claude/
+  .claude-plugin/plugin.json
+  skills/anti-oop-design/SKILL.md
+```
+
+The repository root also contains `.claude-plugin/marketplace.json`, which lets users add this GitHub repository as a Claude Code marketplace and install the plugin from it.
 
 ## References
 

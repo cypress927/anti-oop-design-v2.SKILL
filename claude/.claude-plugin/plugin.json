@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "anti-oop-design",
+  "displayName": "Anti-OOP Design",
+  "version": "1.0.0",
+  "description": "Architecture by aggregation: split pure computation from side effects, isolate growing data in storage, and name units after aggregation.",
+  "author": {
+    "name": "cypress927"
+  },
+  "homepage": "https://github.com/cypress927/anti-oop-design-v2.SKILL",
+  "repository": "https://github.com/cypress927/anti-oop-design-v2.SKILL",
+  "license": "MIT",
+  "keywords": [
+    "architecture",
+    "anti-oop",
+    "functional-core",
+    "skills"
+  ],
+  "skills": "./skills/"
+}

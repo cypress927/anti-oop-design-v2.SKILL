@@ -1,0 +1,28 @@
+{
+  "name": "anti-oop-design-skills",
+  "description": "Marketplace for the Anti-OOP Design Claude Code plugin.",
+  "owner": {
+    "name": "cypress927"
+  },
+  "plugins": [
+    {
+      "name": "anti-oop-design",
+      "displayName": "Anti-OOP Design",
+      "description": "Architecture by aggregation: split pure computation from side effects, isolate growing data in storage, and name units after aggregation.",
+      "version": "1.0.0",
+      "author": {
+        "name": "cypress927"
+      },
+      "repository": "https://github.com/cypress927/anti-oop-design-v2.SKILL",
+      "license": "MIT",
+      "category": "architecture",
+      "tags": [
+        "architecture",
+        "anti-oop",
+        "functional-core",
+        "skills"
+      ],
+      "source": "./claude"
+    }
+  ]
+}

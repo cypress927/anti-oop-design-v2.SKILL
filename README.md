@@ -14,6 +14,10 @@ name: anti-oop-design
 .claude-plugin/
   marketplace.json
 
+AGENTS.md
+CLAUDE.md
+README.md
+
 codex/
   anti-oop-design/
     SKILL.md
@@ -37,6 +41,15 @@ opencode/
 - Use `opencode/` for opencode local skills.
 
 The skill content is intentionally almost identical across platforms. The separate folders make installation explicit and leave room for platform-specific changes later.
+
+## Zero-Install Project Instructions
+
+If you do not want to install a skill or plugin, copy one of the root instruction files into your project:
+
+- `CLAUDE.md` for Claude Code
+- `AGENTS.md` for Codex and other agents that read AGENTS.md
+
+These files contain the same Anti-OOP Design workflow in a project-level instruction format.
 
 ## Install for Codex
 

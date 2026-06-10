@@ -33,17 +33,17 @@ The real business unit may be counterintuitive. It may be `BorrowDecision`, `Ren
 
    Put business rules in pure functions. Controllers, services, repositories, transports, and classes only supply inputs or execute outputs.
 
-3. **Use exact dependencies**
+3. **Use exact growth-independent facts**
 
-   Pass only the fields a function actually uses. If it only needs `score`, pass `score: number`, not a whole `user`.
+   Exact dependencies are not enough. A function can receive only the fields it uses and still be wrong if those fields arrive as a collection that grows with system data. Pass exact, growth-independent facts. If a rule only needs to know whether a sibling node with the same `name` and `type` exists, pass `sameNameAndTypeExists: boolean`, not a `siblings` array containing only `name` and `type`.
 
 4. **Identify growth vectors early**
 
    Identify data that grows over time: users, books, orders, loans, events, messages, logs, rows, pages, streams. Business computation should not depend on their size.
 
-5. **Keep growing data out of computation**
+5. **Project growing data before computation**
 
-   Pure functions must not receive unbounded arrays, database-sized lists, pagination, cursors, streams, query results, or nested structures that grow with the system. Side-effect functions reduce growing data into finite values first: counts, booleans, totals, selected records, timestamps, flags, or fixed-shape summaries.
+   Do not pass a smaller version of growing data into business functions. Selecting only a few fields from a growing set still couples computation to growth. Side-effect functions project growing data into growth-independent facts first: existence checks, counts, totals, selected single records, enum states, timestamps, flags, or fixed-shape summaries.
 
 6. **Name last**
 
@@ -63,7 +63,7 @@ The real business unit may be counterintuitive. It may be `BorrowDecision`, `Ren
 
 10. **Point outer work toward the business core**
 
-   Let UI/app code coordinate runtime. Let runtime and adapters gather finite input from storage, network, time, random values, queues, logs, and other external systems. Pass that finite input into pure business functions. Use the returned decisions to execute runtime effects. Keep the business core as plain functions with explicit finite inputs and decision outputs.
+   Let UI/app code coordinate runtime. Let runtime and adapters gather or compute the growth-independent facts requested by the business core from storage, network, time, random values, queues, logs, and other external systems. Pass those facts into pure business functions. Use the returned decisions to execute runtime effects. Keep the business core as plain functions with explicit fact inputs and decision outputs.
 
 ## Workflow
 
@@ -104,9 +104,11 @@ The real business unit may be counterintuitive. It may be `BorrowDecision`, `Ren
 
 5. Narrow the inputs.
 
-   Remove whole ORM records, mutable domain objects, owner objects, child collections, raw query results, and values kept only because they might be useful later.
+   Remove whole ORM records, mutable domain objects, owner objects, child collections, raw query results, smaller projections of growing collections, and values kept only because they might be useful later.
 
-6. Isolate growing data in side-effect functions.
+6. Project growing data in side-effect functions.
+
+   If the rule seems to need a list that grows, ask what growth-independent fact the rule really needs. The business core defines the fact it needs; the repository implements the query that produces that fact. Orchestration only satisfies that data contract.
 
    Replace:
 
@@ -126,13 +128,35 @@ The real business unit may be counterintuitive. It may be `BorrowDecision`, `Ren
    })
    ```
 
+   Also replace:
+
+   ```ts
+   decideCreateNode({
+     name,
+     type,
+     siblings: siblings.map(({ name, type }) => ({ name, type })),
+   })
+   ```
+
+   With:
+
+   ```ts
+   decideCreateNode({
+     name,
+     type,
+     sameNameAndTypeExists,
+   })
+   ```
+
+   The repository may provide `existsSiblingNodeByNameAndType({ parentId, name, type })`. That is not business leakage into orchestration; it is the data specification requested by the business core. The business function still owns the decision.
+
 7. Build I/O around the pure function.
 
    Side-effect functions should be shaped by what the pure function needs, not by what the database schema happens to expose.
 
 8. Keep orchestration thin.
 
-   Orchestration reads finite input, calls pure computation, and executes resulting effects. It should not contain business conditions.
+   Orchestration loads the growth-independent facts requested by the business core, calls pure computation, and executes resulting effects. It should not contain business conditions.
 
 9. Name the aggregated unit.
 
@@ -145,7 +169,7 @@ When existing code mixes data and methods in classes:
 1. Pick one method containing a business rule.
 2. Copy its conditions into a standalone pure function.
 3. Replace `this.field` access with explicit parameters.
-4. Replace child arrays or nested growing structures with finite values computed by storage.
+4. Replace child arrays or nested growing structures with growth-independent facts computed by storage.
 5. Move database writes, mutation, logging, time, and random values outside the pure function.
 6. Let the original method become thin orchestration or delete it if it no longer owns behavior.
 7. Run tests after each step.
@@ -159,6 +183,7 @@ Do not preserve a class just because its name sounds like the domain. If it only
 - Business rules inside services, controllers, repositories, or entity methods.
 - Pure functions calling time, random, database, network, filesystem, logger, or global state.
 - Arrays, pages, cursors, streams, or growing nested structures in business computation.
+- Smaller projections of growing collections passed into business functions.
 - Shared types created before actual repetition.
 - Repository functions returning class instances with behavior.
 - Architecture folders created before concrete rules exist.
@@ -172,10 +197,12 @@ Before finishing, verify:
 
 - Can every business rule be tested without database, network, clock, random source, or framework?
 - Do business-rule tests use plain inputs and outputs instead of mocks?
-- Does every pure function receive only finite, explicit input values?
-- Are growing datasets handled by side-effect functions before computation?
+- Does every pure function receive exact, growth-independent facts?
+- Does any business input grow when users, files, orders, loans, messages, or sibling nodes grow?
+- Can a repository answer the need as an existence check, count, enum state, selected single record, or fixed-shape summary?
+- Are growing datasets projected by side-effect functions before computation?
 - Is orchestration free of business conditions?
-- Do UI, runtime, storage, network, and framework code gather finite inputs and call pure business functions for decisions?
+- Do UI, runtime, storage, network, and framework code gather the facts requested by pure business functions?
 - Are business functions still plain input-to-decision functions?
 - Did every abstraction appear because of actual repetition?
 - Did names come after aggregation exposed the real unit?

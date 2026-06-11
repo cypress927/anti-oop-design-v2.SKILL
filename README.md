@@ -1,8 +1,10 @@
 # Anti-OOP Design Skill
 
-This repository provides the Anti-OOP Design skill packaged for different agent platforms, including a Claude Code marketplace plugin package.
+Anti-OOP Design is a new business-aggregation-based design method for building clean, testable software architecture with AI agents.
 
-Anti-OOP Design exposes architecture by aggregating business rules, separating pure computation from side effects, deriving business facts from source data, and keeping outer-layer work pointed toward the business core. The intended result is a business core that is easy to test with plain inputs and outputs, without mocks.
+Instead of starting from entities, class hierarchies, or preset layers, it first gathers related business rules, facts, computed results, and side effects into one view. The gathered rule is then split into pure computation and side-effect boundaries, so business logic can be tested with plain inputs and outputs while external code remains thin and focused.
+
+This repository packages the method as ready-to-use skills and instruction files for Codex, Claude Code, and opencode, including a Claude Code marketplace plugin. It is designed to help humans and AI agents collaborate on module design, refactoring, and architecture evolution without scattering business rules across services, entities, repositories, and controllers.
 
 Because only one platform version is installed at a time, every platform package keeps the same skill name:
 

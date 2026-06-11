@@ -92,6 +92,8 @@ Source data belongs to repositories, network code, runtime code, and adapters.
 
 Before calling a pure function, prepare the source data into the facts required by the business rule.
 
+Keep the direction simple: outer code prepares facts; the business core interprets facts.
+
 The orchestration layer satisfies this data contract. It does not interpret business meaning.
 
 ### 9. Separate Mechanical Preparation From Business Judgment

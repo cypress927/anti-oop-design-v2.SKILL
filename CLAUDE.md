@@ -19,9 +19,13 @@ Do not design architecture from storage nouns, entity nouns, framework nouns, or
 
 Instead:
 
-1. Aggregate the variables, conditions, decisions, and actions related to one business rule.
+1. Start from one business unit and aggregate the related business facts, constraints, computed results, and external effects around it.
 2. Split the result into pure computation and side-effect functions.
 3. Name the unit that emerges after aggregation.
+
+A business unit is usually one complete business action, such as transferring money, depositing money, registering a client, renewing a loan, placing an order, or moving a file.
+
+Avoid choosing an internal step as the unit, such as computing a fee, validating an amount, checking a duplicate name, calculating a discount, or formatting output records.
 
 The real business unit may be counterintuitive. Its name should come from the responsibility that appears after aggregation, not from the storage shape seen at the beginning.
 
@@ -29,9 +33,13 @@ The real business unit may be counterintuitive. Its name should come from the re
 
 ### 1. Aggregate First, Separate Second
 
-First bring the facts, checks, reads, writes, and state changes related to one business rule into the same view.
+First choose one business unit, then bring the facts, checks, reads, writes, computed results, and state changes around that unit into the same view.
 
 Aggregation keeps related business change points visible together: when a rule changes, the facts it reads, the data it computes, and the external effects it drives can be reviewed and updated as one unit.
+
+Feature evolution starts by re-aggregating the affected business unit. When a change affects an existing business operation, gather the new facts, constraints, computed values, result data, and external effects around that unit.
+
+For example, if transfers later require fees, revisit the transfer unit so fee facts, fee calculation, balance changes, and returned ledger data are settled together.
 
 This is discovery, not upfront design. Do not classify, name, or abstract before the related facts are visible together.
 
@@ -148,19 +156,29 @@ The business core remains ordinary functions with explicit fact inputs and expli
 
 ## Workflow
 
-### 1. Choose One Concrete Business Operation
+### 1. Choose One Concrete Business Unit
 
-Choose an action or rule, not a noun.
+Choose one concrete business unit, usually a complete business action, not a noun, storage object, validation step, or calculation step.
+
+Boundary check: describe the unit to a non-technical person. If the natural response is "and then what happens?", the chosen unit is probably only a step inside a larger action.
 
 Prefer operations such as:
 
-- "decide whether a user can borrow a book"
-- "decide whether an order can be cancelled"
-- "calculate renewal eligibility"
-- "merge incoming membership state"
+- "transfer money between accounts"
+- "deposit money into an account"
+- "withdraw money from an account"
+- "register a new client"
+- "open a bank account"
+- "renew a book loan"
+- "place an order"
+- "move a file"
 
 Avoid starting from:
 
+- "compute transfer fees"
+- "validate deposit amount"
+- "calculate available balance"
+- "check duplicate file name"
 - "create a User class"
 - "design the domain layer"
 - "make the repository interfaces"
@@ -323,6 +341,10 @@ Orchestration does three things:
 2. Call the pure business function.
 3. Execute external effects from the returned result.
 
+For one business unit, orchestration should read like one pass: load prepared facts, call the pure business computation for that unit, then execute the returned results.
+
+When a new feature adds business meaning, return to the affected business unit and re-aggregate it.
+
 Good shape:
 
 ```ts
@@ -341,8 +363,8 @@ The name should come from the responsibility that is now visible.
 
 Examples:
 
-- a pure function that decides whether borrowing is allowed may become `BorrowDecision`
-- a pure function that calculates renewal eligibility may become `RenewPolicy`
+- a pure function that settles whether borrowing can proceed may become `BorrowDecision`
+- a pure function that settles a loan renewal may become `LoanRenewal`
 - a pure function that merges incoming records may become `MembershipMerge`
 - repeated side-effect functions that prepare business facts may become `BorrowFactRepository`
 - repeated fact input shapes may become shared types, but only after repetition
@@ -351,8 +373,8 @@ Examples:
 
 When existing code mixes data and methods inside classes:
 
-1. Choose one method that contains a business rule.
-2. Move its conditions into a standalone pure function.
+1. Choose one concrete business unit touched by the class method.
+2. Move its conditions, computed values, and result data into a standalone pure function.
 3. Replace object field access with explicit parameters.
 4. Replace collections, nested records, and query results with fixed-size business facts.
 5. Move persistence, mutation, logging, time, and randomness outside the pure function.
@@ -372,10 +394,12 @@ The design is drifting when these signals appear:
 - Business judgment appears inside controllers, services, repositories, or entity methods.
 - A pure function reads time, randomness, databases, network, logs, or global state.
 - A business function is shaped around source data instead of the facts required by the rule.
+- A top-level business function called by orchestration represents a calculation or validation step instead of the whole business unit.
 - Business input size grows with source data size.
 - A pure function receives a collection or sequence mainly to derive a count, total, existence result, extreme value, state, or fixed summary.
 - Growing data is passed into the core to obtain a fixed-size feature.
 - External code receives pure function output and then derives another business value before applying the result.
+- A new feature changes an existing operation, but the affected business unit is not re-aggregated.
 - Shared types or abstractions appear before real repetition.
 - Business tests require mocks for databases, networks, clocks, randomness, or framework objects.
 - Runtime objects appear in pure business function signatures.
@@ -414,6 +438,7 @@ UI/app -> runtime/adapters -> business facts -> pure computation -> computed res
 
 Before finishing, check:
 
+- Did the design start from a concrete business unit rather than a calculation or validation step?
 - Can every business rule be tested without a database, network, clock, random source, or framework?
 - Do business tests use only plain inputs and plain outputs?
 - Are pure function inputs the business facts actually needed by the rule?
@@ -428,6 +453,7 @@ Before finishing, check:
 - Does orchestration only load facts, call the core, and execute results?
 - Does orchestration limit itself to mechanical preparation before calling the core?
 - Is business meaning assigned inside pure functions?
+- When an existing operation changed, was the affected business unit re-aggregated?
 - Is each business function still ordinary fact input to computed data output?
 - Did abstraction come from real repetition?
 - Did naming come from the unit that appeared after aggregation?
